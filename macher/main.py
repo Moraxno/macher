@@ -5,6 +5,8 @@ from typing import Iterable, Union, Optional, Dict, List, Tuple
 import pyvis
 
 
+NEXT_ACTION_LABEL = "next-action"
+
 def parse_args():
     ap = ArgumentParser("macher")
     ap.add_argument("-t", "--token", required=True)
@@ -13,9 +15,9 @@ def parse_args():
 
 
 def get_parent(obj: Union[Project, Task]):
-    if hasattr(obj, "parent_id") and obj.parent_id != None:
+    if isinstance(obj, Project) and obj.parent_id != None:
         return obj.parent_id
-    elif hasattr(obj, "project_id") and obj.project_id != None:
+    elif isinstance(obj, Task) and obj.project_id != None:
         return obj.project_id
     else:
         return None
@@ -48,15 +50,15 @@ def get_color(obj: Union[Project, Task, Comment]):
         raise ValueError
 
 
-from enum import StrEnum
+from enum import Enum, auto
 
 
-class ProjectStructure(StrEnum):
-    SERIAL = "serial"
-    PARALLEL = "parallel"
-    COLLECTION = "collection"
+class ProjectStructure(Enum):
+    SERIAL        = auto()
+    PARALLEL      = auto()
+    COLLECTION    = auto()
 
-    STRUCTURELESS = "structureless"
+    STRUCTURELESS = auto()
 
 
 REFERENCE_KEY = "ref"
@@ -111,7 +113,7 @@ def is_leaf_project(G: nx.DiGraph, node_id: str):
     return True
 
 
-import numpy as np
+# import numpy as np
 
 structure_lut: Dict[str, ProjectStructure] = {
     "+": ProjectStructure.COLLECTION,
@@ -150,11 +152,12 @@ def get_structure_by_project(project: Project) -> ProjectStructure:
     else:
         return ProjectStructure.STRUCTURELESS
 
+import numpy as np
 
-def get_next_actions(G: nx.DiGraph, root_id: str):
+def get_next_actions(G: nx.DiGraph, root_id: str) -> List[str]:
     ref_obj = G.nodes[root_id][REFERENCE_KEY]
 
-    next_ids = []
+    next_ids: List[str] = []
     child_objects = [G.nodes[cid][REFERENCE_KEY] for cid in G.successors(root_id)]
 
     if is_exempt(G, root_id):
