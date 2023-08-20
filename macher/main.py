@@ -334,7 +334,7 @@ def hard_update_task(api: TodoistAPI, task: Task, labels=None, order=None):
     )
     api.delete_task(task.id)
     
-    return task
+    return new_task
 
 if __name__ == "__main__":
     main()
