@@ -282,15 +282,12 @@ def main():
     all_nexts = set()
     for project_id in leaf_project_ids:
         nexts = get_next_actions(nx_graph, project_id)
-        print(project_id, nexts)
         all_nexts.update(nexts)
         
     for task in tasks:
         labels = task.labels
         order = get_order(task)
-        
-        print(task)
-        
+                
         if task.id in all_nexts:
             if NEXT_ACTION_LABEL not in task.labels:
                 labels = task.labels + [NEXT_ACTION_LABEL]
@@ -300,7 +297,7 @@ def main():
                 
         if task.labels != labels or task.order != order:
             update_result = hard_update_task(api, task, labels=labels, order=order)
-            print(f"Update: {task} => {update_result}")
+
                 
                 
     for task in tasks:
