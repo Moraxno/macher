@@ -171,7 +171,7 @@ def get_next_actions(G: nx.DiGraph, root_id: str) -> List[str]:
         for child_obj in child_objects:
             next_ids.extend(get_next_actions(G, child_obj.id))
     elif G.nodes[root_id]["structure"] == ProjectStructure.SERIAL:
-        order_id_lut = {obj.order: obj.id for obj in child_objects}
+        order_id_lut = {get_order(obj): obj.id for obj in child_objects}
         first = np.min(list(order_id_lut.keys()))
         next_ids.extend(get_next_actions(G, order_id_lut[first]))
     else:
@@ -179,6 +179,24 @@ def get_next_actions(G: nx.DiGraph, root_id: str) -> List[str]:
 
     return next_ids
 
+import re
+
+def get_order(obj: Union[Task, Project]) -> int:
+    text = ""
+    order = 0
+    if isinstance(obj, Project):
+        text = obj.name
+    elif isinstance(obj, Task):
+        text = obj.content
+    
+    match = re.match(r"\((\d+)\).*", text)
+    
+    if match:
+        order = int(match.group(1))
+    else:
+        order = obj.order
+    
+    return order
 
 def get_structure(obj: Union[Project, Task]) -> ProjectStructure:
     if isinstance(obj, Task):
