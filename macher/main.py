@@ -263,6 +263,8 @@ def clean_graph(G, mark_nexts):
 
     return g2
 
+from datetime import datetime as dt
+
 
 def main():
     args = parse_args()
@@ -282,15 +284,57 @@ def main():
         nexts = get_next_actions(nx_graph, project_id)
         print(project_id, nexts)
         all_nexts.update(nexts)
+        
+    for task in tasks:
+        labels = task.labels
+        order = get_order(task)
+        
+        print(task)
+        
+        if task.id in all_nexts:
+            if NEXT_ACTION_LABEL not in task.labels:
+                labels = task.labels + [NEXT_ACTION_LABEL]
+        else:
+            if NEXT_ACTION_LABEL in task.labels:
+                labels = list(set(task.labels).difference(set([NEXT_ACTION_LABEL])))
+                
+        if task.labels != labels or task.order != order:
+            update_result = hard_update_task(api, task, labels=labels, order=order)
+            print(f"Update: {task} => {update_result}")
+                
+                
+    for task in tasks:
+        if task.content == "Last Macher Run":
+            api.update_task(task.id, description=dt.now().strftime("%Y-%m-%d, %H:%M:%S"))
 
-    nt = pyvis.network.Network(height="420px", notebook=True, directed=True)
+    # nt = pyvis.network.Network(height="420px", notebook=True, directed=True)
     # # populates the nodes and edges data structures
-    pgraph = clean_graph(nx_graph, mark_nexts=all_nexts)
-    nt.from_nx(pgraph)
-    nt.toggle_physics(False)
-    nt.show_buttons(filter_=["physics"])
-    nt.show("nx.html")
+    # pgraph = clean_graph(nx_graph, mark_nexts=all_nexts)
+    # nt.from_nx(pgraph)
+    # nt.toggle_physics(False)
+    # nt.show_buttons(filter_=["physics"])
+    # nt.show("nx.html")
 
+
+def hard_update_task(api: TodoistAPI, task: Task, labels=None, order=None):
+    new_order = order or task.order
+    new_labels = labels or task.labels
+    
+    new_task = api.add_task(
+        content=task.content,
+        description=task.description,
+        project_id=task.project_id,
+        section_id=task.section_id,
+        parent_id=task.parent_id,
+        order=new_order,
+        labels=new_labels,
+        priority=task.priority,
+        due_date=task.due.date if task.due else None,
+        assignee_id=task.assignee_id,
+    )
+    api.delete_task(task.id)
+    
+    return task
 
 if __name__ == "__main__":
     main()
